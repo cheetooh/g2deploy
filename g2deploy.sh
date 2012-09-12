@@ -21,8 +21,8 @@ cat /etc/sudoers | grep -v g2 > /etc/sudoers.tmp
 echo "g2 ALL=(ALL:ALL) ALL" >>/etc/sudoers.tmp
 mv /etc/sudoers.tmp /etc/sudoers
 chmod 0440 /etc/sudoers
-g2deploy_exists=$(grep g2deploy ~/.bashrc)
-if [-z "$g2deploy_exists"]
+count=$(grep -i "g2deploy" ~/.bashrc|wc -l)
+if test $count -gt 0
 then
 cat ~/.bashrc | grep -v g2deploy > ~/.bashrc_tmp
 mv ~/.bashrc_tmp ~/.bashrc
@@ -30,4 +30,5 @@ else
 echo "~/g2deploy/g2deploy.sh" >> ~/.bashrc
 shutdown -r now
 fi
+
 apt-get install -y htop
