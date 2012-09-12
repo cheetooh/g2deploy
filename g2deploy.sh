@@ -1,6 +1,6 @@
 #!/bin/bash
 apt-get update
-apt-get install language-pack-en-base
+apt-get install -y language-pack-en-base
 export LANGUAGE=en_US.UTF-8
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
