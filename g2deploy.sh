@@ -1,6 +1,4 @@
 #!/bin/bash
-# First argument
-# - norestart
 
 function goodstuff_g2 {
     # Installs the REAL vim, wget, less, and enables color root prompt and the "ll" list long alias
@@ -41,17 +39,7 @@ then
 sed -i'.bk' -e "s/env_reset/env_reset,pwfeedback/" /etc/sudoers
 fi
 chmod 0440 /etc/sudoers
-if [ $1 != "norestart" ]; then
-count=$(grep -i "g2deploy" ~/.bashrc|wc -l)
-if test $count -gt 0
-then
-cat ~/.bashrc | grep -v g2deploy > ~/.bashrc_tmp
-mv ~/.bashrc_tmp ~/.bashrc
-else
-echo "~/g2deploy/g2deploy.sh" >> ~/.bashrc
-shutdown -r now
-fi
-fi
+
 system_update
 postfix_install_loopback_only
 mysql_install "Welcome123Juzit" && mysql_tune 40
