@@ -86,10 +86,11 @@ goodstuff
 goodstuff_g2
 
 mysql_secure_installation
+echo "New password for g2"
 passwd g2
 
 system_security_ufw_configure_basic
 ufw allow 1194
-system_lock_user
+system_lock_user root
 
 shutdown -r now
