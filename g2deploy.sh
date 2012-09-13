@@ -18,7 +18,6 @@ export LC_ALL=en_US.UTF-8
 echo "export LANGUAGE=en_US.UTF-8" >> /etc/environment
 echo "export LANG=en_US.UTF-8" >> /etc/environment
 echo "export LC_ALL=en_US.UTF-8" >> /etc/environment
-apt-get update
 apt-get install -y language-pack-en-base
 locale-gen en_US.UTF-8
 dpkg-reconfigure locales
