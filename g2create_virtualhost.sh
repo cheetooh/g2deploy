@@ -20,7 +20,7 @@ function apache_virtualhost_g2 {
 		return;
 	fi
 
-	mkdir -p /srv/www/$1/public_html /srv/www/$1/logs
+	mkdir -p /var/www/$1 /var/logs/$1/logs
 
 	echo "<VirtualHost *:80>" > /etc/apache2/sites-available/$1
 	echo "    ServerName $1" >> /etc/apache2/sites-available/$1
