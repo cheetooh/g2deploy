@@ -55,6 +55,7 @@ sed -i'.bk' 's/^expose_php.*/expose_php = Off/' /etc/php5/apache2/php.ini
 apache_install && apache_tune 40
 echo "ServerSignature Off" >> /etc/apache2/apache2.conf
 echo "ServerTokens Prod" >> /etc/apache2/apache2.conf
+a2enmod rewrite
 
 ###########################################################
 # SSH
