@@ -82,3 +82,4 @@ ufw allow 1194
 system_lock_user root
 
 shutdown -r now
+exit

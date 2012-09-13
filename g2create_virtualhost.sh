@@ -29,7 +29,7 @@ function apache_virtualhost_g2 {
     	echo "    CustomLog /var/logs/$1/access.log combined" >> /etc/apache2/sites-available/$1
         echo "    <Directory /var/www/$1>" >> /etc/apache2/sites-available/$1
         echo "        Options FollowSymLinks MultiViews" >> /etc/apache2/sites-available/$1
-        echo "        AllowOverride None" >> /etc/apache2/sites-available/$1
+        echo "        AllowOverride ALL" >> /etc/apache2/sites-available/$1
         echo "        Order allow,deny" >> /etc/apache2/sites-available/$1
         echo "        allow from all" >> /etc/apache2/sites-available/$1
         echo "    </Directory>" >> /etc/apache2/sites-available/$1
