@@ -63,6 +63,7 @@ echo "ServerTokens Prod" >> /etc/apache2/apache2.conf
 system_sshd_permitrootlogin no
 system_sshd_passwordauthentication no
 system_user_add_ssh_key "g2" "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCmG4HXpZLao+iS8oNH5o+6p35OzyJEJ/GRkyHqUVr1oVapCs0eTXYPL0vCqbXYCpZBM3Hz4XzM4sCBgZiY7ymCC2Y1JVdwEZ/DrcB6YYS4HmzLGmC5gH11/MOfqEBmWaKl/sy4ARJYXggX5yTraFM3w+JWEza2jB0qMIv8EvBxdVR1ItyUK5Mwg8sn4y8YpT+nnXOvLRL89dnkiqo6UR0AhpPWIOrnN9vm0ZnNMy2RVIYGv1vo+fS1KeXxtpLlaBPpKZBBKbveqaqH/ceyPtHaP+sCg94FzUydXv2ZOEnnLCZtxxf49cY9pa6R3Uv9v3Wjvdj8L7YL/CnIqQaPIizn g2@G2MAC.local"
+system_user_add_ssh_key "g2" "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAggDE+F1RNA25J1K1YxDFrbDFswXrkp0P6jKTz++GuxnW4np16h4LHg2rUjJ7JDma/o4K0WhSUT2mcsgiRnbGMMc3FmwdVCmbHcA1KMwP13zD2lYLv67nm00HTCTaAF4Nsah8nwy0IaVbInxCeMWR4B4jI6JcVxdsFusCizIC83zOLdE= G2ONEX"
 chown g2:g2 ~g2/.ssh/authorized_keys
 
 apt-get install -y fail2ban
