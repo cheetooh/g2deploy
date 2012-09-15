@@ -24,6 +24,8 @@ function apache_virtualhost_g2 {
 
 	echo "<VirtualHost *:80>" > /etc/apache2/sites-available/$1
 	echo "    ServerName $1" >> /etc/apache2/sites-available/$1
+	echo "    ServerAlias www.$1" >> /etc/apache2/sites-available/$1
+	echo "    ServerAdmin webmaster@$1" >> /etc/apache2/sites-available/$
 	echo "    DocumentRoot /var/www/$1/" >> /etc/apache2/sites-available/$1
 	echo "    ErrorLog /var/log/www/$1/error.log" >> /etc/apache2/sites-available/$1
     	echo "    CustomLog /var/log/www/$1/access.log combined" >> /etc/apache2/sites-available/$1
