@@ -4,13 +4,13 @@ set -e
 
 STEP_FILE="/var/tmp/new_machine_install_progress"
 LOG_FILE="/var/tmp/new_machine_install.log"
+CACHE_FILE="/var/tmp/proxy_ip.cache"
 STEP3_PROXY_IP=""
 
 # Handle --force flag
 if [[ "$1" == "--force" ]]; then
     echo "⚠️  Force mode: clearing previous progress."
-    sudo rm -f "$STEP_FILE"
-    sudo rm -f "$LOG_FILE"
+    sudo rm -f "$STEP_FILE" "$LOG_FILE" "$CACHE_FILE"
 fi
 
 touch "$STEP_FILE"
@@ -98,6 +98,7 @@ if ! has_run "step3"; then
                 fi
             done
             STEP3_PROXY_IP="$PROXY_IP"
+            echo "$PROXY_IP" > "$CACHE_FILE"
         fi
         mark_done "step3"
     fi
@@ -200,7 +201,13 @@ fi
 # --------------------
 if ! has_run "step10"; then
     if prompt_or_auto_yes "Step 10: Configure Docker daemon proxy?"; then
-        read -p "Enter proxy IP for Docker daemon (leave blank to reuse from Step 3): " DOCKER_PROXY_IP
+        # Load saved proxy IP if variable is empty
+        if [[ -z "$STEP3_PROXY_IP" && -f "$CACHE_FILE" ]]; then
+            STEP3_PROXY_IP=$(cat "$CACHE_FILE")
+            echo "Recovered proxy IP from cache: $STEP3_PROXY_IP"
+        fi
+
+        read -p "Enter proxy IP for Docker daemon (leave blank to reuse Step 3): " DOCKER_PROXY_IP
         if [[ -z "$DOCKER_PROXY_IP" ]]; then
             DOCKER_PROXY_IP="$STEP3_PROXY_IP"
             if [[ -z "$DOCKER_PROXY_IP" ]]; then
@@ -211,6 +218,7 @@ if ! has_run "step10"; then
                 echo "Using Step 3 proxy IP: $DOCKER_PROXY_IP"
             fi
         fi
+
         PROXY_CONF_DIR="/etc/systemd/system/docker.service.d"
         PROXY_CONF_FILE="$PROXY_CONF_DIR/http-proxy.conf"
         sudo mkdir -p "$PROXY_CONF_DIR"
