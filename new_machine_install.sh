@@ -108,22 +108,59 @@ if ! has_run "step3"; then
 fi
 
 # --------------------
-# STEP 4: apt update
+# STEP 4: Install and configure chrony NTP
 # --------------------
 if ! has_run "step4"; then
-    if prompt_or_auto_yes "Step 4: Run apt update?"; then
-        sudo apt update
+    if prompt_or_auto_yes "Step 4: Install and configure chrony for time sync?"; then
+        sudo apt-get install -y chrony
+
+        read -p "Enter NTP server IP (leave empty to skip configuration): " NTP_IP
+        if [[ -z "$NTP_IP" ]]; then
+            echo "No NTP IP provided. Skipping chrony configuration."
+        else
+            CHRONY_CONF="/etc/chrony/chrony.conf"
+            BACKUP="$CHRONY_CONF.bak.$(date +%s)"
+            sudo cp "$CHRONY_CONF" "$BACKUP"
+            echo "Backup of chrony.conf saved at $BACKUP"
+
+            # Comment out all pool lines
+            sudo sed -i 's/^\s*\(pool\s\)/# \1/' "$CHRONY_CONF"
+
+            # Comment out the rtcsync line
+            sudo sed -i 's/^\s*\(rtcsync\)/# \1/' "$CHRONY_CONF"
+
+            # Add the server line after the last pool line
+            LAST_POOL_LINE=$(grep -n '^[[:space:]]*#\?[[:space:]]*pool' "$CHRONY_CONF" | tail -n 1 | cut -d: -f1)
+            if [[ -n "$LAST_POOL_LINE" ]]; then
+                sudo sed -i "${LAST_POOL_LINE}a server $NTP_IP iburst" "$CHRONY_CONF"
+            else
+                echo "server $NTP_IP iburst" | sudo tee -a "$CHRONY_CONF" > /dev/null
+            fi
+
+            echo "NTP server $NTP_IP configured in chrony."
+            sudo systemctl restart chrony
+        fi
         mark_done "step4"
     fi
 fi
 
 # --------------------
-# STEP 5: apt upgrade and reboot
+# STEP 5: apt update
 # --------------------
 if ! has_run "step5"; then
-    if prompt_or_auto_yes "Step 5: Run apt upgrade and reboot?"; then
-        sudo apt upgrade -y
+    if prompt_or_auto_yes "Step 5: Run apt update?"; then
+        sudo apt update
         mark_done "step5"
+    fi
+fi
+
+# --------------------
+# STEP 6: apt upgrade and reboot
+# --------------------
+if ! has_run "step6"; then
+    if prompt_or_auto_yes "Step 6: Run apt upgrade and reboot?"; then
+        sudo apt upgrade -y
+        mark_done "step6"
         echo "Rebooting system now to continue..."
         sudo reboot
         exit 0
@@ -131,22 +168,22 @@ if ! has_run "step5"; then
 fi
 
 # --------------------
-# STEP 6: Remove old Docker/container packages
+# STEP 7: Remove old Docker/container packages
 # --------------------
-if ! has_run "step6"; then
-    if prompt_or_auto_yes "Step 6: Remove old Docker-related packages?"; then
+if ! has_run "step7"; then
+    if prompt_or_auto_yes "Step 7: Remove old Docker-related packages?"; then
         for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
             sudo apt-get remove -y $pkg || true
         done
-        mark_done "step6"
+        mark_done "step7"
     fi
 fi
 
 # --------------------
-# STEP 7: Add Docker GPG key and repo
+# STEP 8: Add Docker GPG key and repo
 # --------------------
-if ! has_run "step7"; then
-    if prompt_or_auto_yes "Step 7: Add Docker GPG key and repository?"; then
+if ! has_run "step8"; then
+    if prompt_or_auto_yes "Step 8: Add Docker GPG key and repository?"; then
         sudo apt-get update
         sudo apt-get install -y ca-certificates curl
         sudo install -m 0755 -d /etc/apt/keyrings
@@ -159,28 +196,28 @@ if ! has_run "step7"; then
           sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         sudo apt-get update
-        mark_done "step7"
-    fi
-fi
-
-# --------------------
-# STEP 8: Install Docker
-# --------------------
-if ! has_run "step8"; then
-    if prompt_or_auto_yes "Step 8: Install Docker Engine?"; then
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
         mark_done "step8"
     fi
 fi
 
 # --------------------
-# STEP 9: Add user to docker group
+# STEP 9: Install Docker
 # --------------------
 if ! has_run "step9"; then
-    if prompt_or_auto_yes "Step 9: Add user '$USER' to docker group?"; then
+    if prompt_or_auto_yes "Step 9: Install Docker Engine?"; then
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        mark_done "step9"
+    fi
+fi
+
+# --------------------
+# STEP 10: Add user to docker group
+# --------------------
+if ! has_run "step10"; then
+    if prompt_or_auto_yes "Step 10: Add user '$USER' to docker group?"; then
         sudo usermod -aG docker $USER
         echo "User '$USER' added to docker group. You may need to logout and log back in for this to take effect."
-        mark_done "step9"
+        mark_done "step10"
     fi
 fi
 
