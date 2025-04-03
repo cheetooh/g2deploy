@@ -42,10 +42,29 @@ mark_done() {
 }
 
 # --------------------
-# STEP 1: Update /etc/hosts
+# STEP 1: Set timezone
 # --------------------
 if ! has_run "step1"; then
-    if prompt_or_auto_yes "Step 1: Add hostname to /etc/hosts?"; then
+    if prompt_or_auto_yes "Step 1: Set timezone?"; then
+        read -p "Enter timezone (e.g., Asia/Kuala_Lumpur) or leave empty to use default: " TZ_INPUT
+        TZ=${TZ_INPUT:-Asia/Kuala_Lumpur}
+
+        if timedatectl list-timezones | grep -q "^$TZ$"; then
+            echo "Setting timezone to $TZ..."
+            sudo timedatectl set-timezone "$TZ"
+            echo "Timezone set to $TZ."
+        else
+            echo "⚠️  Invalid timezone '$TZ'. Skipping timezone update."
+        fi
+        mark_done "step1"
+    fi
+fi
+
+# --------------------
+# STEP 2: Update /etc/hosts
+# --------------------
+if ! has_run "step2"; then
+    if prompt_or_auto_yes "Step 2: Add hostname to /etc/hosts?"; then
         HOSTNAME=$(hostname)
         if ! grep -q "127.0.0.1.*\b$HOSTNAME\b" /etc/hosts; then
             TMPFILE=$(mktemp)
@@ -56,18 +75,18 @@ if ! has_run "step1"; then
         else
             echo "Hostname '$HOSTNAME' already exists in /etc/hosts. Skipping."
         fi
-        mark_done "step1"
+        mark_done "step2"
     fi
 fi
 
 # --------------------
-# STEP 2: Append proxy settings to /etc/environment
+# STEP 3: Append proxy settings to /etc/environment
 # --------------------
-if ! has_run "step2"; then
-    if prompt_or_auto_yes "Step 2: Add proxy settings to /etc/environment?"; then
+if ! has_run "step3"; then
+    if prompt_or_auto_yes "Step 3: Add proxy settings to /etc/environment?"; then
         read -p "Enter proxy IP address (leave empty to skip): " PROXY_IP
         if [[ -z "$PROXY_IP" ]]; then
-            echo "No proxy IP provided. Skipping Step 2."
+            echo "No proxy IP provided. Skipping Step 3."
         else
             PROXY_LINES=(
                 "http_proxy=\"http://$PROXY_IP:3128\""
@@ -84,27 +103,27 @@ if ! has_run "step2"; then
                 fi
             done
         fi
-        mark_done "step2"
-    fi
-fi
-
-# --------------------
-# STEP 3: apt update
-# --------------------
-if ! has_run "step3"; then
-    if prompt_or_auto_yes "Step 3: Run apt update?"; then
-        sudo apt update
         mark_done "step3"
     fi
 fi
 
 # --------------------
-# STEP 4: apt upgrade and reboot
+# STEP 4: apt update
 # --------------------
 if ! has_run "step4"; then
-    if prompt_or_auto_yes "Step 4: Run apt upgrade and reboot?"; then
-        sudo apt upgrade -y
+    if prompt_or_auto_yes "Step 4: Run apt update?"; then
+        sudo apt update
         mark_done "step4"
+    fi
+fi
+
+# --------------------
+# STEP 5: apt upgrade and reboot
+# --------------------
+if ! has_run "step5"; then
+    if prompt_or_auto_yes "Step 5: Run apt upgrade and reboot?"; then
+        sudo apt upgrade -y
+        mark_done "step5"
         echo "Rebooting system now to continue..."
         sudo reboot
         exit 0
@@ -112,22 +131,22 @@ if ! has_run "step4"; then
 fi
 
 # --------------------
-# STEP 5: Remove old Docker/container packages
+# STEP 6: Remove old Docker/container packages
 # --------------------
-if ! has_run "step5"; then
-    if prompt_or_auto_yes "Step 5: Remove old Docker-related packages?"; then
+if ! has_run "step6"; then
+    if prompt_or_auto_yes "Step 6: Remove old Docker-related packages?"; then
         for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
             sudo apt-get remove -y $pkg || true
         done
-        mark_done "step5"
+        mark_done "step6"
     fi
 fi
 
 # --------------------
-# STEP 6: Add Docker GPG key and repo
+# STEP 7: Add Docker GPG key and repo
 # --------------------
-if ! has_run "step6"; then
-    if prompt_or_auto_yes "Step 6: Add Docker GPG key and repository?"; then
+if ! has_run "step7"; then
+    if prompt_or_auto_yes "Step 7: Add Docker GPG key and repository?"; then
         sudo apt-get update
         sudo apt-get install -y ca-certificates curl
         sudo install -m 0755 -d /etc/apt/keyrings
@@ -140,28 +159,28 @@ if ! has_run "step6"; then
           sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         sudo apt-get update
-        mark_done "step6"
-    fi
-fi
-
-# --------------------
-# STEP 7: Install Docker
-# --------------------
-if ! has_run "step7"; then
-    if prompt_or_auto_yes "Step 7: Install Docker Engine?"; then
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
         mark_done "step7"
     fi
 fi
 
 # --------------------
-# STEP 8: Add user to docker group
+# STEP 8: Install Docker
 # --------------------
 if ! has_run "step8"; then
-    if prompt_or_auto_yes "Step 8: Add user '$USER' to docker group?"; then
+    if prompt_or_auto_yes "Step 8: Install Docker Engine?"; then
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        mark_done "step8"
+    fi
+fi
+
+# --------------------
+# STEP 9: Add user to docker group
+# --------------------
+if ! has_run "step9"; then
+    if prompt_or_auto_yes "Step 9: Add user '$USER' to docker group?"; then
         sudo usermod -aG docker $USER
         echo "User '$USER' added to docker group. You may need to logout and log back in for this to take effect."
-        mark_done "step8"
+        mark_done "step9"
     fi
 fi
 
