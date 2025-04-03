@@ -23,7 +23,7 @@ echo "📘 Starting setup script at $(date)"
 # Function to ask Yes/No with timeout, defaulting to "Yes"
 prompt_or_auto_yes() {
     local question="$1"
-    local timeout=10
+    local timeout=5
     echo -n "$question [Y/n] (auto-yes in $timeout sec): "
     read -t $timeout answer
     answer=${answer:-Y}
