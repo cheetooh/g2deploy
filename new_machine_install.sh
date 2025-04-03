@@ -108,10 +108,20 @@ if ! has_run "step3"; then
 fi
 
 # --------------------
-# STEP 4: Install and configure chrony NTP
+# STEP 4: apt update
 # --------------------
 if ! has_run "step4"; then
-    if prompt_or_auto_yes "Step 4: Install and configure chrony for time sync?"; then
+    if prompt_or_auto_yes "Step 4: Run apt update?"; then
+        sudo apt update
+        mark_done "step4"
+    fi
+fi
+
+# --------------------
+# STEP 5: Install and configure chrony NTP
+# --------------------
+if ! has_run "step5"; then
+    if prompt_or_auto_yes "Step 5: Install and configure chrony for time sync?"; then
         sudo apt-get install -y chrony
 
         read -p "Enter NTP server IP (leave empty to skip configuration): " NTP_IP
@@ -140,16 +150,6 @@ if ! has_run "step4"; then
             echo "NTP server $NTP_IP configured in chrony."
             sudo systemctl restart chrony
         fi
-        mark_done "step4"
-    fi
-fi
-
-# --------------------
-# STEP 5: apt update
-# --------------------
-if ! has_run "step5"; then
-    if prompt_or_auto_yes "Step 5: Run apt update?"; then
-        sudo apt update
         mark_done "step5"
     fi
 fi
