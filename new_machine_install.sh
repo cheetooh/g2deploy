@@ -6,6 +6,7 @@ STEP_FILE="/var/tmp/new_machine_install_progress"
 LOG_FILE="/var/tmp/new_machine_install.log"
 CACHE_FILE="/var/tmp/proxy_ip.cache"
 STEP3_PROXY_IP=""
+DOCKER_INSTALLED="false"
 
 # Handle --force flag
 if [[ "$1" == "--force" ]]; then
@@ -32,7 +33,7 @@ prompt_or_auto_yes() {
 }
 
 has_run() {
-    grep -q "^$1$" "$STEP_FILE"
+    grep -q "^$1\$" "$STEP_FILE"
 }
 
 mark_done() {
@@ -60,7 +61,7 @@ if ! has_run "step2"; then
         HOSTNAME=$(hostname)
         if ! grep -q "127.0.0.1.*\b$HOSTNAME\b" /etc/hosts; then
             TMPFILE=$(mktemp)
-            awk '/^127\\.0\\.0\\.1/ {print; print "127.0.0.1 '$HOSTNAME'"; next} {print}' /etc/hosts > "$TMPFILE"
+            awk '/^127\.0\.0\.1/ {print; print "127.0.0.1 '"$HOSTNAME"'"; next} {print}' /etc/hosts > "$TMPFILE"
             sudo cp "$TMPFILE" /etc/hosts
             rm "$TMPFILE"
             echo "Hostname '$HOSTNAME' added to /etc/hosts."
@@ -110,9 +111,11 @@ fi
 if ! has_run "step5"; then
     if prompt_or_auto_yes "Step 5: Install and configure chrony for time sync?"; then
         sudo apt-get install -y chrony
+
         if [[ -z "$STEP3_PROXY_IP" && -f "$CACHE_FILE" ]]; then
             STEP3_PROXY_IP=$(cat "$CACHE_FILE")
         fi
+
         read -p "Enter NTP server IP (leave empty to use proxy IP from Step 3): " NTP_IP
         if [[ -z "$NTP_IP" ]]; then
             NTP_IP="$STEP3_PROXY_IP"
@@ -124,6 +127,7 @@ if ! has_run "step5"; then
                 echo "Using Step 3 proxy IP as NTP server: $NTP_IP"
             fi
         fi
+
         CHRONY_CONF="/etc/chrony/chrony.conf"
         BACKUP="$CHRONY_CONF.bak.$(date +%s)"
         sudo cp "$CHRONY_CONF" "$BACKUP"
@@ -153,11 +157,9 @@ if ! has_run "step6"; then
 fi
 
 # STEP 7: Install Docker (includes cleanup + GPG + install)
-RUN_DOCKER_SETUP=false
 if ! has_run "step7"; then
-    if prompt_or_auto_yes "Step 7: Install Docker and configure environment?"; then
-        RUN_DOCKER_SETUP=true
-        echo "Step 7: Preparing Docker environment..."
+    if prompt_or_auto_yes "Step 7: Install Docker Engine and prepare environment?"; then
+        DOCKER_INSTALLED="true"
         echo "  → Removing old Docker packages..."
         for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do
             sudo apt-get remove -y $pkg || true
@@ -170,7 +172,7 @@ if ! has_run "step7"; then
         sudo chmod a+r /etc/apt/keyrings/docker.asc
         echo \
         "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-        $(. /etc/os-release && echo \"${UBUNTU_CODENAME:-$VERSION_CODENAME}\") stable" | \
+        $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
         sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
         sudo apt-get update
         echo "  → Installing Docker Engine..."
@@ -180,7 +182,7 @@ if ! has_run "step7"; then
 fi
 
 # STEP 8: Configure Docker daemon proxy
-if ! has_run "step8" && [[ "$RUN_DOCKER_SETUP" == true ]]; then
+if ! has_run "step8" && has_run "step7"; then
     if prompt_or_auto_yes "Step 8: Configure Docker daemon proxy?"; then
         if [[ -z "$STEP3_PROXY_IP" && -f "$CACHE_FILE" ]]; then
             STEP3_PROXY_IP=$(cat "$CACHE_FILE")
@@ -215,7 +217,7 @@ EOF
 fi
 
 # STEP 9: Add user to docker group
-if ! has_run "step9" && [[ "$RUN_DOCKER_SETUP" == true ]]; then
+if ! has_run "step9" && has_run "step7"; then
     if prompt_or_auto_yes "Step 9: Add user '$USER' to docker group?"; then
         sudo usermod -aG docker $USER
         echo "User '$USER' added to docker group. You may need to logout and log back in."
